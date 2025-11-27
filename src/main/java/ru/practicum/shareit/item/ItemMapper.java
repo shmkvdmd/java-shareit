@@ -1,13 +1,13 @@
 package ru.practicum.shareit.item;
 
+import org.springframework.stereotype.Component;
 import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.user.User;
 
+@Component
 public class ItemMapper {
-    private ItemMapper() {
-    }
 
-    public static ItemDto toItemDto(Item item) {
+    public ItemDto toDto(Item item) {
         Long ownerId = item.getOwner() != null ? item.getOwner().getId() : null;
         Long requestId = item.getRequest() != null ? item.getRequest().getId() : null;
         return new ItemDto(
@@ -19,7 +19,7 @@ public class ItemMapper {
                 requestId);
     }
 
-    public static Item toItem(Long id, ItemDto itemDto, User user, ItemRequest itemRequest) {
+    public Item toEntity(Long id, ItemDto itemDto, User user, ItemRequest itemRequest) {
         return Item.builder()
                 .id(id)
                 .name(itemDto.name())

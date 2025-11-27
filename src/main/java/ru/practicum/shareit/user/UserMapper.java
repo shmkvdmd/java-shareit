@@ -1,14 +1,15 @@
 package ru.practicum.shareit.user;
 
-public class UserMapper {
-    private UserMapper() {
-    }
+import org.springframework.stereotype.Component;
 
-    public static UserDto toUserDto(User user) {
+@Component
+public class UserMapper {
+
+    public UserDto toDto(User user) {
         return new UserDto(user.getId(), user.getName(), user.getEmail());
     }
 
-    public static User toUser(Long id, UserDto userDto) {
+    public User toEntity(Long id, UserDto userDto) {
         return new User(id, userDto.name(), userDto.email());
     }
 }

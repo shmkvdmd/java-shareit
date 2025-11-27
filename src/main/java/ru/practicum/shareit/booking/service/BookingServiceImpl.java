@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.BookingDto;
 import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.exception.ExceptionConstants;
+import ru.practicum.shareit.exception.NotImplementedException;
 
 import java.util.List;
 
@@ -14,26 +16,26 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto create(BookingDto bookingDto) {
-        return null;
+        throw new NotImplementedException(ExceptionConstants.METHOD_NOT_IMPLEMENTED);
     }
 
     @Override
     public BookingDto update(Long id, BookingDto bookingDto) {
-        return null;
+        throw new NotImplementedException(ExceptionConstants.METHOD_NOT_IMPLEMENTED);
     }
 
     @Override
     public BookingDto getById(Long id) {
-        return null;
+        throw new NotImplementedException(ExceptionConstants.METHOD_NOT_IMPLEMENTED);
     }
 
     @Override
     public List<BookingDto> getAll() {
-        return List.of();
+        throw new NotImplementedException(ExceptionConstants.METHOD_NOT_IMPLEMENTED);
     }
 
     @Override
     public void delete(Long id) {
-
+        throw new NotImplementedException(ExceptionConstants.METHOD_NOT_IMPLEMENTED);
     }
 }

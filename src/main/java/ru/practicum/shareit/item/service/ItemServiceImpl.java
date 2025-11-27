@@ -23,36 +23,25 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final ItemRequestRepository itemRequestRepository;
+    private final ItemMapper itemMapper;
 
     @Override
     public ItemDto create(ItemDto itemDto, Long userId) {
-        User user = userRepository.findUserById(userId)
-                .orElseThrow(() -> {
-                    log.warn("create: user with id={} not found", userId);
-                    return new NotFoundException(String.format(ExceptionConstants.USER_NOT_FOUND, userId));
-                });
+        User user = findUserByIdOrThrow(userId);
 
         ItemRequest itemRequest = null;
         if (itemDto.requestId() != null) {
-            Long id = itemDto.requestId();
-            itemRequest = itemRequestRepository.findItemRequestById(id)
-                    .orElseThrow(() -> {
-                        log.warn("create: item request with id={} not found", id);
-                        return new NotFoundException(String.format(ExceptionConstants.REQUEST_NOT_FOUND, id));
-                    });
+            itemRequest = findItemRequestByIdOrThrow(itemDto.requestId());
         }
 
-        Item item = ItemMapper.toItem(getNextId(), itemDto, user, itemRequest);
+        Item item = itemMapper.toEntity(getNextId(), itemDto, user, itemRequest);
         Item saved = itemRepository.createItem(item);
-        return ItemMapper.toItemDto(saved);
+        return itemMapper.toDto(saved);
     }
 
     @Override
     public ItemDto update(Long id, ItemDto itemDto, Long userId) {
-        Item item = itemRepository.findItemById(id).orElseThrow(() -> {
-            log.warn("update: item with id={} not found", id);
-            return new NotFoundException(String.format(ExceptionConstants.ITEM_NOT_FOUND, id));
-        });
+        Item item = findItemByIdOrThrow(id);
 
         if (item.getOwner() == null || !item.getOwner().getId().equals(userId)) {
             log.warn("update: userId={} is not owner of itemId={}, ownerId={}",
@@ -71,25 +60,16 @@ public class ItemServiceImpl implements ItemService {
             item.setIsAvailable(itemDto.available());
         }
         if (itemDto.requestId() != null) {
-            Long requestId = itemDto.requestId();
-            item.setRequest(itemRequestRepository.findItemRequestById(requestId)
-                    .orElseThrow(() -> {
-                        log.warn("update: item request with id={} not found", requestId);
-                        return new NotFoundException(
-                                String.format(ExceptionConstants.REQUEST_NOT_FOUND, requestId));
-                    }));
+            item.setRequest(findItemRequestByIdOrThrow(itemDto.requestId()));
         }
         Item updated = itemRepository.updateItem(item);
-        return ItemMapper.toItemDto(updated);
+        return itemMapper.toDto(updated);
     }
 
     @Override
     public ItemDto getById(Long id) {
-        Item item = itemRepository.findItemById(id).orElseThrow(() -> {
-            log.warn("get: user with id={} not found", id);
-            return new NotFoundException(String.format(ExceptionConstants.USER_NOT_FOUND, id));
-        });
-        return ItemMapper.toItemDto(item);
+        Item item = findItemByIdOrThrow(id);
+        return itemMapper.toDto(item);
     }
 
     @Override
@@ -98,7 +78,7 @@ public class ItemServiceImpl implements ItemService {
             return List.of();
         }
         List<Item> items = itemRepository.findItemsByText(text);
-        return items.stream().map(ItemMapper::toItemDto).toList();
+        return items.stream().map(itemMapper::toDto).toList();
     }
 
     @Override
@@ -106,7 +86,7 @@ public class ItemServiceImpl implements ItemService {
         List<Item> items = itemRepository.findAllItems();
         return items.stream()
                 .filter(item -> item.getOwner().getId().equals(userId))
-                .map(ItemMapper::toItemDto).toList();
+                .map(itemMapper::toDto).toList();
     }
 
     @Override
@@ -120,4 +100,29 @@ public class ItemServiceImpl implements ItemService {
                 .max()
                 .orElse(0) + 1;
     }
+
+    private User findUserByIdOrThrow(Long userId) {
+        return userRepository.findUserById(userId)
+                .orElseThrow(() -> {
+                    log.warn("User with id={} not found", userId);
+                    return new NotFoundException(String.format(ExceptionConstants.USER_NOT_FOUND, userId));
+                });
+    }
+
+    private Item findItemByIdOrThrow(Long itemId) {
+        return itemRepository.findItemById(itemId)
+                .orElseThrow(() -> {
+                    log.warn("Item with id={} not found", itemId);
+                    return new NotFoundException(String.format(ExceptionConstants.ITEM_NOT_FOUND, itemId));
+                });
+    }
+
+    private ItemRequest findItemRequestByIdOrThrow(Long requestId) {
+        return itemRequestRepository.findItemRequestById(requestId)
+                .orElseThrow(() -> {
+                    log.warn("Item request with id={} not found", requestId);
+                    return new NotFoundException(String.format(ExceptionConstants.REQUEST_NOT_FOUND, requestId));
+                });
+    }
+
 }

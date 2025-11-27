@@ -11,4 +11,6 @@ public class ExceptionConstants {
     public static final String ITEM_WRONG_OWNER = "UserId=%s is not owner of itemId=%s, ownerId=%s";
     public static final String WRONG_EMAIL_FORMAT = "Wrong email format: %s";
     public static final String EMAIL_EXISTS = "Email exists: %s";
+
+    public static final String METHOD_NOT_IMPLEMENTED = "Method not implemented yet";
 }

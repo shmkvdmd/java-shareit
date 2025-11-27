@@ -18,21 +18,19 @@ import java.util.List;
 @Slf4j
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
     public UserDto create(UserDto userDto) {
         Long id = getNextId();
         isValidEmail(id, userDto.email());
-        User user = userRepository.createUser(UserMapper.toUser(id, userDto));
-        return UserMapper.toUserDto(user);
+        User user = userRepository.createUser(userMapper.toEntity(id, userDto));
+        return userMapper.toDto(user);
     }
 
     @Override
     public UserDto update(Long id, UserDto userDto) {
-        User user = userRepository.findUserById(id).orElseThrow(() -> {
-            log.warn("update: user with id={} not found", id);
-            return new NotFoundException(String.format(ExceptionConstants.USER_NOT_FOUND, id));
-        });
+        User user = findUserByIdOrThrow(id);
 
         if (userDto.name() != null) {
             user.setName(userDto.name());
@@ -45,23 +43,20 @@ public class UserServiceImpl implements UserService {
         }
 
         User updated = userRepository.updateUser(user);
-        return UserMapper.toUserDto(updated);
+        return userMapper.toDto(updated);
     }
 
 
     @Override
     public UserDto getById(Long id) {
-        User user = userRepository.findUserById(id).orElseThrow(() -> {
-            log.warn("getById: user with id={} not found", id);
-            return new NotFoundException(String.format(ExceptionConstants.USER_NOT_FOUND, id));
-        });
-        return UserMapper.toUserDto(user);
+        User user = findUserByIdOrThrow(id);
+        return userMapper.toDto(user);
     }
 
     @Override
     public List<UserDto> getAll() {
         List<User> users = userRepository.findAllUsers();
-        return users.stream().map(UserMapper::toUserDto).toList();
+        return users.stream().map(userMapper::toDto).toList();
     }
 
     @Override
@@ -92,5 +87,13 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException(
                     String.format(ExceptionConstants.WRONG_EMAIL_FORMAT, email));
         }
+    }
+
+    private User findUserByIdOrThrow(Long userId) {
+        return userRepository.findUserById(userId)
+                .orElseThrow(() -> {
+                    log.warn("User with id={} not found", userId);
+                    return new NotFoundException(String.format(ExceptionConstants.USER_NOT_FOUND, userId));
+                });
     }
 }

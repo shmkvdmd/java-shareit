@@ -3,7 +3,6 @@ package ru.practicum.shareit.booking;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import ru.practicum.shareit.booking.enums.BookingStatus;
 import ru.practicum.shareit.item.Item;
 import ru.practicum.shareit.user.User;
 
@@ -14,9 +13,17 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Booking {
     private Long id;
-    private LocalDateTime start;
-    private LocalDateTime end;
+    private LocalDateTime startDateTime;
+    private LocalDateTime endDateTime;
     private Item item;
-    private User booker;
+    private User creator;
     private BookingStatus status;
+
+    public enum BookingStatus {
+        WAITING,
+        APPROVED,
+        REJECTED,
+        CANCELED
+    }
 }
+

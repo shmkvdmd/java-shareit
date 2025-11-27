@@ -24,4 +24,10 @@ public class ErrorHandler {
     public ErrorResponse handleBadRequest(final IllegalArgumentException e) {
         return new ErrorResponse(e.getMessage());
     }
+
+    @ExceptionHandler({NotImplementedException.class})
+    @ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
+    public ErrorResponse handleNotImplemented(final NotImplementedException e) {
+        return new ErrorResponse(e.getMessage());
+    }
 }
