@@ -7,7 +7,7 @@ import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.user.User;
 
 @Entity
-@Table(name="items")
+@Table(name = "items")
 @Getter
 @Setter
 @Builder
@@ -25,7 +25,7 @@ public class Item {
     @Column
     private String description;
 
-    @Column(name="is_available", nullable = false)
+    @Column(name = "is_available", nullable = false)
     private Boolean isAvailable;
 
     @ManyToOne(fetch = FetchType.LAZY)

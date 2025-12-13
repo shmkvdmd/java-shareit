@@ -8,7 +8,7 @@ import ru.practicum.shareit.user.User;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="requests")
+@Table(name = "requests")
 @Builder
 @Getter
 @Setter
