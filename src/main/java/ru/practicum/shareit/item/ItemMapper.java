@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item;
 
 import org.springframework.stereotype.Component;
+import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.user.User;
 
@@ -8,25 +9,23 @@ import ru.practicum.shareit.user.User;
 public class ItemMapper {
 
     public ItemDto toDto(Item item) {
-        Long ownerId = item.getOwner() != null ? item.getOwner().getId() : null;
-        Long requestId = item.getRequest() != null ? item.getRequest().getId() : null;
-        return new ItemDto(
-                item.getId(),
-                item.getName(),
-                item.getDescription(),
-                item.getIsAvailable(),
-                ownerId,
-                requestId);
+        return ItemDto.builder()
+                .id(item.getId())
+                .name(item.getName())
+                .description(item.getDescription())
+                .available(item.getIsAvailable())
+                .requestId(item.getRequest() != null ? item.getRequest().getId() : null)
+                .build();
     }
 
-    public Item toEntity(Long id, ItemDto itemDto, User user, ItemRequest itemRequest) {
+    public Item toEntity(ItemDto dto, User owner, ItemRequest request) {
         return Item.builder()
-                .id(id)
-                .name(itemDto.name())
-                .description(itemDto.description())
-                .isAvailable(itemDto.available())
-                .owner(user)
-                .request(itemRequest)
+                .id(dto.id())
+                .name(dto.name())
+                .description(dto.description())
+                .isAvailable(dto.available())
+                .owner(owner)
+                .request(request)
                 .build();
     }
 }
