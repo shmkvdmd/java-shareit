@@ -20,8 +20,9 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemDtoWithBooking;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.User;
-import ru.practicum.shareit.utils.ServiceUtils;
+import ru.practicum.shareit.user.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -34,25 +35,28 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
+    private final ItemRequestRepository itemRequestRepository;
     private final ItemMapper itemMapper;
     private final BookingMapper bookingMapper;
     private final CommentMapper commentMapper;
-    private final ServiceUtils utils;
 
     @Override
     @Transactional
     public ItemDto create(Long userId, ItemDto itemDto) {
-        User owner = utils.getUserOrThrow(userId);
-        ItemRequest request = itemDto.requestId() != null ? utils.getRequestOrThrow(itemDto.requestId()) : null;
+        User owner = getUserOrThrow(userId);
+        ItemRequest request = itemDto.requestId() != null ? getRequestOrThrow(itemDto.requestId()) : null;
 
-        Item item = itemMapper.toEntity(itemDto, owner, request);
+        Item item = itemMapper.toEntity(itemDto);
+        item.setOwner(owner);
+        item.setRequest(request);
         return itemMapper.toDto(itemRepository.save(item));
     }
 
     @Override
     @Transactional
     public ItemDto update(Long userId, Long itemId, ItemDto itemDto) {
-        Item item = utils.getItemOrThrow(itemId);
+        Item item = getItemOrThrow(itemId);
 
         if (!item.getOwner().getId().equals(userId)) {
             log.warn("User {} tried to update item {} but not own (owner={})", userId, itemId, item.getOwner().getId());
@@ -74,7 +78,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDtoWithBooking getById(Long userId, Long itemId) {
-        Item item = utils.getItemOrThrow(itemId);
+        Item item = getItemOrThrow(itemId);
         List<CommentDto> comments = getCommentsForItem(itemId);
 
         BookingShortDto last = null;
@@ -94,7 +98,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDtoWithBooking> getAllByOwner(Long userId) {
-        utils.getUserOrThrow(userId);
+        getUserOrThrow(userId);
         List<Item> items = itemRepository.findByOwnerIdOrderByIdAsc(userId);
         LocalDateTime now = LocalDateTime.now();
 
@@ -125,8 +129,8 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public CommentDto addComment(Long userId, Long itemId, CreateCommentDto commentDto) {
-        User author = utils.getUserOrThrow(userId);
-        Item item = utils.getItemOrThrow(itemId);
+        User author = getUserOrThrow(userId);
+        Item item = getItemOrThrow(itemId);
 
         if (!bookingRepository.existsByItemIdAndBookerIdAndStatusAndEndBefore(
                 itemId, userId, BookingStatus.APPROVED, LocalDateTime.now())) {
@@ -134,12 +138,10 @@ public class ItemServiceImpl implements ItemService {
             throw new ValidationException(ExceptionConstants.NO_COMPLETED_BOOKING_FOR_COMMENT);
         }
 
-        Comment comment = Comment.builder()
-                .text(commentDto.text())
-                .item(item)
-                .creator(author)
-                .created(LocalDateTime.now())
-                .build();
+        Comment comment = commentMapper.toEntity(commentDto);
+        comment.setItem(item);
+        comment.setCreator(author);
+        comment.setCreated(LocalDateTime.now());
 
         return commentMapper.toDto(commentRepository.save(comment));
     }
@@ -169,5 +171,29 @@ public class ItemServiceImpl implements ItemService {
                         itemId, BookingStatus.APPROVED, now)
                 .map(bookingMapper::toShortDto)
                 .orElse(null);
+    }
+
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("User with id={} not found", userId);
+                    return new NotFoundException(String.format(ExceptionConstants.USER_NOT_FOUND, userId));
+                });
+    }
+
+    private ItemRequest getRequestOrThrow(Long requestId) {
+        return itemRequestRepository.findById(requestId)
+                .orElseThrow(() -> {
+                    log.warn("ItemRequest with id={} not found", requestId);
+                    return new NotFoundException(String.format(ExceptionConstants.REQUEST_NOT_FOUND, requestId));
+                });
+    }
+
+    private Item getItemOrThrow(Long itemId) {
+        return itemRepository.findById(itemId)
+                .orElseThrow(() -> {
+                    log.warn("Item with id={} not found", itemId);
+                    return new NotFoundException(String.format(ExceptionConstants.ITEM_NOT_FOUND, itemId));
+                });
     }
 }

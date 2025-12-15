@@ -2,10 +2,7 @@ package ru.practicum.shareit.comment;
 
 import org.springframework.stereotype.Component;
 import ru.practicum.shareit.comment.dto.CommentDto;
-import ru.practicum.shareit.item.Item;
-import ru.practicum.shareit.user.User;
-
-import java.time.LocalDateTime;
+import ru.practicum.shareit.comment.dto.CreateCommentDto;
 
 @Component
 public class CommentMapper {
@@ -19,13 +16,9 @@ public class CommentMapper {
         );
     }
 
-    public Comment toEntity(CommentDto dto, Item item, User creator) {
+    public Comment toEntity(CreateCommentDto dto) {
         return Comment.builder()
-                .id(dto.id())
                 .text(dto.text())
-                .item(item)
-                .creator(creator)
-                .created(dto.created() != null ? dto.created() : LocalDateTime.now())
                 .build();
     }
 }

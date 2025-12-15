@@ -5,9 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingCreateDto;
 import ru.practicum.shareit.booking.dto.BookingDto;
-import ru.practicum.shareit.booking.enums.State;
+import ru.practicum.shareit.booking.enums.BookingSearchState;
 import ru.practicum.shareit.booking.service.BookingService;
-import ru.practicum.shareit.exception.ValidationException;
 
 import java.util.List;
 
@@ -39,23 +38,13 @@ public class BookingController {
 
     @GetMapping
     public List<BookingDto> getBookings(@RequestHeader("X-Sharer-User-Id") Long userId,
-                                        @RequestParam(defaultValue = "ALL") String state) {
-        State s = parseState(state);
-        return bookingService.getBookingsByUser(userId, s);
+                                        @RequestParam(defaultValue = "ALL") BookingSearchState state) {
+        return bookingService.getBookingsByUser(userId, state);
     }
 
     @GetMapping("/owner")
     public List<BookingDto> getBookingsByOwner(@RequestHeader("X-Sharer-User-Id") Long userId,
-                                               @RequestParam(defaultValue = "ALL") String state) {
-        State s = parseState(state);
-        return bookingService.getBookingsByOwner(userId, s);
-    }
-
-    private State parseState(String state) {
-        try {
-            return State.valueOf(state.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new ValidationException("Unknown state: " + state);
-        }
+                                               @RequestParam(defaultValue = "ALL") BookingSearchState state) {
+        return bookingService.getBookingsByOwner(userId, state);
     }
 }

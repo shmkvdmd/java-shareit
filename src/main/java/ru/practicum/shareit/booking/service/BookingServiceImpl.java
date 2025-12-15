@@ -9,14 +9,15 @@ import ru.practicum.shareit.booking.*;
 import ru.practicum.shareit.booking.dto.BookingCreateDto;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.enums.BookingStatus;
-import ru.practicum.shareit.booking.enums.State;
+import ru.practicum.shareit.booking.enums.BookingSearchState;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.exception.ExceptionConstants;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.Item;
+import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.User;
-import ru.practicum.shareit.utils.ServiceUtils;
+import ru.practicum.shareit.user.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,14 +27,15 @@ import java.util.List;
 @Slf4j
 public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
+    private final ItemRepository itemRepository;
     private final BookingMapper mapper;
-    private final ServiceUtils utils;
 
     @Override
     @Transactional
     public BookingDto create(Long userId, BookingCreateDto createDto) {
-        Item item = utils.getItemOrThrow(createDto.itemId());
-        User booker = utils.getUserOrThrow(userId);
+        Item item = getItemOrThrow(createDto.itemId());
+        User booker = getUserOrThrow(userId);
 
         if (item.getOwner().getId().equals(userId)) {
             log.warn("User {} attempted to book own item {}", userId, item.getId());
@@ -44,13 +46,10 @@ public class BookingServiceImpl implements BookingService {
             throw new ValidationException(ExceptionConstants.ITEM_NOT_AVAILABLE);
         }
 
-        Booking booking = Booking.builder()
-                .start(createDto.start())
-                .end(createDto.end())
-                .item(item)
-                .booker(booker)
-                .status(BookingStatus.WAITING)
-                .build();
+        Booking booking = mapper.toEntity(createDto);
+        booking.setItem(item);
+        booking.setBooker(booker);
+        booking.setStatus(BookingStatus.WAITING);
 
         return mapper.toDto(bookingRepository.save(booking));
     }
@@ -58,7 +57,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingDto updateStatus(Long userId, Long bookingId, Boolean approved) {
-        Booking booking = utils.getBookingOrThrow(bookingId);
+        Booking booking = getBookingOrThrow(bookingId);
 
         if (!booking.getItem().getOwner().getId().equals(userId)) {
             log.warn("User {} tried to update booking {} but not owner", userId, bookingId);
@@ -75,7 +74,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto getById(Long userId, Long bookingId) {
-        Booking booking = utils.getBookingOrThrow(bookingId);
+        Booking booking = getBookingOrThrow(bookingId);
         Long ownerId = booking.getItem().getOwner().getId();
         Long bookerId = booking.getBooker().getId();
 
@@ -89,8 +88,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getBookingsByUser(Long userId, State state) {
-        utils.getUserOrThrow(userId);
+    public List<BookingDto> getBookingsByUser(Long userId, BookingSearchState state) {
+        getUserOrThrow(userId);
         Sort sort = Sort.by(Sort.Direction.DESC, "start");
         LocalDateTime now = LocalDateTime.now();
 
@@ -107,8 +106,8 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getBookingsByOwner(Long userId, State state) {
-        utils.getUserOrThrow(userId);
+    public List<BookingDto> getBookingsByOwner(Long userId, BookingSearchState state) {
+        getUserOrThrow(userId);
         Sort sort = Sort.by(Sort.Direction.DESC, "start");
         LocalDateTime now = LocalDateTime.now();
 
@@ -122,5 +121,29 @@ public class BookingServiceImpl implements BookingService {
         };
 
         return bookings.stream().map(mapper::toDto).toList();
+    }
+
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    log.warn("User with id={} not found", userId);
+                    return new NotFoundException(String.format(ExceptionConstants.USER_NOT_FOUND, userId));
+                });
+    }
+
+    private Item getItemOrThrow(Long itemId) {
+        return itemRepository.findById(itemId)
+                .orElseThrow(() -> {
+                    log.warn("Item with id={} not found", itemId);
+                    return new NotFoundException(String.format(ExceptionConstants.ITEM_NOT_FOUND, itemId));
+                });
+    }
+
+    private Booking getBookingOrThrow(Long bookingId) {
+        return bookingRepository.findById(bookingId)
+                .orElseThrow(() -> {
+                    log.warn("Booking with id={} not found", bookingId);
+                    return new NotFoundException(String.format(ExceptionConstants.BOOKING_NOT_FOUND, bookingId));
+                });
     }
 }

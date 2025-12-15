@@ -5,6 +5,7 @@ import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import ru.practicum.shareit.booking.enums.BookingStatus;
+import ru.practicum.shareit.user.dto.BookerDto;
 
 import java.time.LocalDateTime;
 
