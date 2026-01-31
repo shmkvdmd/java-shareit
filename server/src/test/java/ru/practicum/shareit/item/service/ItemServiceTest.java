@@ -9,6 +9,7 @@ import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingMapper;
 import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.comment.CommentMapper;
 import ru.practicum.shareit.comment.CommentRepository;
 import ru.practicum.shareit.comment.dto.CreateCommentDto;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -53,6 +54,9 @@ class ItemServiceTest {
 
     @Mock
     private BookingMapper bookingMapper;
+
+    @Mock
+    private CommentMapper commentMapper;
 
     @InjectMocks
     private ItemServiceImpl itemService;
