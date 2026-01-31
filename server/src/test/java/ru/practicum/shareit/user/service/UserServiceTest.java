@@ -11,6 +11,7 @@ import ru.practicum.shareit.user.UserMapper;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.dto.UserDto;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -63,5 +64,36 @@ class UserServiceTest {
         userService.delete(1L);
 
         verify(userRepository).deleteById(1L);
+    }
+
+    @Test
+    void update_shouldUpdateOnlyName() {
+        Long userId = 1L;
+        User user = User.builder().id(userId).name("old").email("old@mail.ru").build();
+        UserDto updateDto = new UserDto(null, "new", null);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
+        when(userMapper.toDto(any(User.class))).thenAnswer(i -> {
+            User u = i.getArgument(0);
+            return new UserDto(u.getId(), u.getName(), u.getEmail());
+        });
+
+        UserDto result = userService.update(userId, updateDto);
+
+        assertEquals("new", result.name());
+        assertEquals("old@mail.ru", result.email());
+    }
+
+    @Test
+    void getAll_shouldReturnList() {
+        User user = User.builder().id(1L).build();
+        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userMapper.toDto(user)).thenReturn(new UserDto(1L, "n", "e"));
+
+        List<UserDto> result = userService.getAll();
+
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
     }
 }

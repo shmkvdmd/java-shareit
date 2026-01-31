@@ -5,7 +5,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.BookingMapper;
+import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.comment.CommentMapper;
+import ru.practicum.shareit.comment.CommentRepository;
 import ru.practicum.shareit.comment.dto.CreateCommentDto;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
@@ -13,6 +18,8 @@ import ru.practicum.shareit.item.Item;
 import ru.practicum.shareit.item.ItemMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
@@ -37,7 +44,16 @@ class ItemServiceTest {
     private BookingRepository bookingRepository;
 
     @Mock
+    private CommentRepository commentRepository;
+
+    @Mock
+    private ItemRequestRepository itemRequestRepository;
+
+    @Mock
     private ItemMapper itemMapper;
+
+    @Mock
+    private BookingMapper bookingMapper;
 
     @InjectMocks
     private ItemServiceImpl itemService;
@@ -154,5 +170,100 @@ class ItemServiceTest {
         itemService.deleteById(1L);
 
         verify(itemRepository).deleteById(1L);
+    }
+
+    @Test
+    void search_whenValidText_shouldReturnItems() {
+        String text = "text";
+        Item item = Item.builder().id(1L).isAvailable(true).build();
+        ItemDto dto = ItemDto.builder().id(1L).build();
+
+        when(itemRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(text, text))
+                .thenReturn(List.of(item));
+        when(itemMapper.toDto(item)).thenReturn(dto);
+
+        List<ItemDto> result = itemService.search(text);
+
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void update_shouldUpdateOnlyAvailableStatus() {
+        User owner = User.builder().id(1L).build();
+        Item item = Item.builder().id(1L).owner(owner).isAvailable(true).name("Old").build();
+        ItemDto updateDto = ItemDto.builder().available(false).build();
+
+        when(itemRepository.findById(1L)).thenReturn(Optional.of(item));
+        when(itemRepository.save(item)).thenReturn(item);
+
+        itemService.update(1L, 1L, updateDto);
+
+        assertFalse(item.getIsAvailable());
+        assertEquals("Old", item.getName());
+    }
+
+    @Test
+    void getById_whenOwner_shouldIncludeBookings() {
+        Long userId = 1L;
+        Long itemId = 1L;
+        User owner = User.builder().id(userId).build();
+        Item item = Item.builder().id(itemId).owner(owner).build();
+
+        Booking booking = new ru.practicum.shareit.booking.Booking();
+        BookingShortDto bookingShortDto = new BookingShortDto(1L, 1L, LocalDateTime.now(), LocalDateTime.now());
+
+        when(itemRepository.findById(itemId)).thenReturn(Optional.of(item));
+        when(commentRepository.findByItemIdOrderByCreatedDesc(itemId)).thenReturn(List.of());
+        when(bookingRepository.findFirstByItemIdAndStatusAndEndBeforeOrderByEndDesc(anyLong(), any(), any()))
+                .thenReturn(Optional.of(booking));
+        when(bookingRepository.findFirstByItemIdAndStatusAndStartAfterOrderByStartAsc(anyLong(), any(), any()))
+                .thenReturn(Optional.of(booking));
+
+        when(bookingMapper.toShortDto(any())).thenReturn(bookingShortDto);
+
+        var result = itemService.getById(userId, itemId);
+
+        assertNotNull(result);
+        assertNotNull(result.lastBooking());
+        assertNotNull(result.nextBooking());
+        verify(bookingRepository, times(1)).findFirstByItemIdAndStatusAndEndBeforeOrderByEndDesc(any(), any(), any());
+    }
+
+    @Test
+    void getAllByOwner_shouldReturnItemsWithBookings() {
+        Long userId = 1L;
+        User owner = User.builder().id(userId).build();
+        Item item = Item.builder().id(1L).owner(owner).build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(owner));
+        when(itemRepository.findByOwnerIdOrderByIdAsc(userId)).thenReturn(List.of(item));
+        when(commentRepository.findByItemIdOrderByCreatedDesc(anyLong())).thenReturn(List.of());
+
+        var result = itemService.getAllByOwner(userId);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    void create_withRequest_shouldSetRequest() {
+        Long userId = 1L;
+        Long requestId = 10L;
+        ItemDto dto = ItemDto.builder().name("Item").requestId(requestId).build();
+        User owner = User.builder().id(userId).build();
+        ItemRequest request = ItemRequest.builder().id(requestId).build();
+        Item item = Item.builder().name("Item").build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(owner));
+        when(itemRequestRepository.findById(requestId)).thenReturn(Optional.of(request));
+        when(itemMapper.toEntity(dto)).thenReturn(item);
+        when(itemRepository.save(any())).thenReturn(item);
+        when(itemMapper.toDto(any())).thenReturn(dto);
+
+        ItemDto result = itemService.create(userId, dto);
+
+        assertNotNull(result);
+        verify(itemRequestRepository).findById(requestId);
     }
 }
