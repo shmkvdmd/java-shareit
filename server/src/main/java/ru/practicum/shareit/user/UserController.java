@@ -1,6 +1,5 @@
 package ru.practicum.shareit.user;
 
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
@@ -17,7 +16,7 @@ public class UserController {
     }
 
     @PostMapping
-    UserDto addUser(@RequestBody @Valid UserDto userDto) {
+    UserDto addUser(@RequestBody UserDto userDto) {
         return userService.create(userDto);
     }
 

@@ -1,8 +1,6 @@
 package ru.practicum.shareit.user;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Entity
@@ -18,11 +16,8 @@ public class User {
     private Long id;
 
     @Column(nullable = false)
-    @NotBlank
     private String name;
 
     @Column(nullable = false, unique = true)
-    @Email
-    @NotBlank
     private String email;
 }

@@ -1,7 +1,6 @@
 package ru.practicum.shareit.comment;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import ru.practicum.shareit.item.Item;
 import ru.practicum.shareit.user.User;
@@ -21,7 +20,6 @@ public class Comment {
     private Long id;
 
     @Column(name = "comment_text", nullable = false)
-    @NotBlank
     private String text;
 
     @ManyToOne

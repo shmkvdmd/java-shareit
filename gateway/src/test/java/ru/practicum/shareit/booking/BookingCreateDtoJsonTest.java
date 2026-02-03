@@ -63,7 +63,7 @@ class BookingCreateDtoJsonTest {
 
     @Test
     void shouldPassValidDto() throws Exception {
-        String json = "{\"start\":\"2026-02-01T10:00:00\",\"end\":\"2026-02-02T10:00:00\",\"itemId\":1}";
+        String json = "{\"start\":\"2029-02-01T10:00:00\",\"end\":\"2029-02-02T10:00:00\",\"itemId\":1}";
 
         BookingCreateDto dto = objectMapper.readValue(json, BookingCreateDto.class);
 
