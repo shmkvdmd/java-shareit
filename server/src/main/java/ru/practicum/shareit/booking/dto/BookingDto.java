@@ -1,7 +1,6 @@
 package ru.practicum.shareit.booking.dto;
 
 import lombok.Builder;
-import org.antlr.v4.runtime.misc.NotNull;
 import ru.practicum.shareit.booking.enums.BookingStatus;
 import ru.practicum.shareit.user.dto.BookerDto;
 
